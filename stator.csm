@@ -1,0 +1,73 @@
+# Motor Stator
+# written by Tucker Babcock
+
+# Constant Parameters:
+set      air_gap           0.001    # air gap thickness
+
+# Design Parameters:
+
+# rotor
+despmtr  rot_rad_outer      0.5     # outer radius of rotor
+
+# stator 
+despmtr   rad_outer         1.0      # outer radius of stator ring
+despmtr   rad_inner         0.8      # inner radius of stator ring
+despmtr   axial_height      1.0      # axial height of stator
+
+# stator teeth
+#despmtr   tooth_length     0.2       # length of tooth excluding flange
+despmtr   tooth_width      0.1     # width of tooth
+despmtr   flange_length    0.1     # lenght of flange on tooth
+despmtr   flange_width     0.2       # width of flange
+despmtr   tooth_flange_fillet 0.02  # radius of fillet on the inside corner between the tooth and flange
+despmtr   tooth_ring_fillet	0.05		# radius of fillet between stator ring and tooth
+despmtr	 flange_fillet		0.01		# radius of fillet on flange
+
+despmtr   num_teeth      12      # number of teeth
+
+# Calculated Parameters
+set    tooth_length     (rad_inner-rot_rad_outer-air_gap-flange_length/2)      # length of tooth excluding flange
+
+# stator ring
+set       stator_bot             0
+
+cylinder  0         0         stator_bot    0         0         axial_height     rad_outer
+	attribute capsGroup $stator
+cylinder  0         0         stator_bot    0         0         axial_height     rad_inner
+	attribute capsGroup $stator
+subtract
+
+# stator tooth
+patbeg 	i 		num_teeth
+
+	box		-tooth_width/2 -rad_inner stator_bot tooth_width tooth_length axial_height
+		attribute capsGroup $stator
+	box		-flange_width/2 -rad_inner+tooth_length stator_bot flange_width flange_length axial_height
+		attribute capsGroup $stator
+	fillet flange_fillet 2;3;1;3
+		attribute capsGroup $stator
+
+	union
+	fillet tooth_flange_fillet
+		attribute capsGroup $stator
+
+	cylinder 0			0			stator_bot		0			0		axial_height 	rot_rad_outer
+		attribute capsGroup $stator
+	subtract
+
+	set theta 360*i/num_teeth
+	rotatez theta 0 0
+
+	union
+		attribute capsGroup $stator
+	fillet tooth_ring_fillet 
+		attribute capsGroup $stator
+
+patend
+
+select body
+	attribute capsAIM $aflr4AIM;aflr3AIM
+	ATTRIBUTE capsMeshLength 0.1
+#dump	$/stator.tess		# create an ascii file of the surface tesselation computed by EGADS
+#dump	$/stator.b8.ugrid		# create an ascii file of the surface tesselation computed by EGADS
+#dump	$/stator.egads		# dump egads file
